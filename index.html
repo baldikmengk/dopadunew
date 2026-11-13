@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<base target="_top">
+<title>Untuk Entrian DOPADU</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root { --bg:#f4f6fb; --card:#fff; --line:#e5e8ef; --ink:#1c2333; --mut:#667085; --pri:#2450c8; --ok:#157347; --warn:#9a5b00; --err:#b42318; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
+header { background:linear-gradient(135deg,#2450c8,#1c3b94); color:#fff; padding:22px 16px; text-align:center; }
+header h1 { margin:0 0 4px; font-size:1.25rem; }
+header div { opacity:.9; font-size:.9rem; }
+nav { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:14px 10px 0; }
+nav button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:9px 18px; cursor:pointer; font-size:.95rem; }
+nav button.on { background:var(--pri); color:#fff; border-color:var(--pri); }
+main { max-width:1100px; margin:14px auto 40px; padding:0 12px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:14px; }
+h2 { margin:0 0 12px; font-size:1.05rem; }
+label { display:block; font-weight:600; margin:10px 0 4px; }
+input, select { width:100%; padding:9px; border:1px solid #cfd4de; border-radius:8px; font-size:.95rem; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+.btn { background:var(--pri); color:#fff; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:.95rem; margin-top:14px; }
+.btn.sec { background:#475467; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.msg { margin-top:12px; padding:10px 12px; border-radius:8px; font-size:.9rem; }
+.msg.ok { background:#e7f6ee; color:var(--ok); } .msg.err { background:#fdecea; color:var(--err); } .msg.warn { background:#fff4e0; color:var(--warn); }
+.hide { display:none; }
+.wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:#f8f9fc; font-size:.78rem; text-transform:uppercase; color:var(--mut); }
+td.n { text-align:right; white-space:nowrap; } td.w { color:var(--mut); font-style:italic; }
+tr.sec td { background:#e8eefb; font-weight:700; }
+.chips span { display:inline-block; margin:2px 6px 2px 0; padding:3px 10px; border-radius:999px; font-size:.8rem; }
+.chips .y { background:#e7f6ee; color:var(--ok); } .chips .t { background:#eef0f4; color:var(--mut); }
+.small { color:var(--mut); font-size:.82rem; }
+footer { text-align:center; color:var(--mut); font-size:.85rem; padding:18px 10px 28px; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<header><h1>Untuk Entrian DOPADU</h1><div>Data Laporan Triwulan SMA SMK Kab. Gunungkidul</div><div>Balai Pendidikan Menengah Kab. Gunungkidul</div></header>
+
+<div id="app">
+<nav>
+  <button id="t_upload" class="on" onclick="tab('upload')">Upload Data</button>
+  <button id="t_tahunan" onclick="tab('tahunan')">Data Tahunan</button>
+  <button id="t_hasil" onclick="tab('hasil')">Hasil Indikator</button>
+  <button id="t_riwayat" onclick="tab('riwayat')">Riwayat</button>
+</nav>
+<main>
+
+<section id="p_upload">
+  <div class="card">
+    <h2>Upload data mentah</h2>
+    <div class="row">
+      <div><label>Jenis data</label>
+        <select id="jenis" onchange="gantiJenis()">
+          <option value="pokok">Data Pokok Pendidikan (CSV/XLSX) — per triwulan</option>
+          <option value="sekolah">Daftar sekolah SIMAK (XLSX) — per triwulan</option>
+          <option value="ats">Rekap ATS (CSV/XLSX) — per triwulan</option>
+          <option value="lulusan">Lulusan per sekolah (XLSX) — per tahun</option>
+        </select></div>
+      <div><label id="lbTahun">Tahun</label><input type="number" id="tahun" value="2026"></div>
+      <div id="boxTw"><label>Triwulan</label>
+        <select id="tw"><option value="1">TW1 (Jan–Mar)</option><option value="2">TW2 (Apr–Jun)</option><option value="3">TW3 (Jul–Sep)</option><option value="4" selected>TW4 (Okt–Des)</option></select></div>
+    </div>
+    <p class="small" id="petunjukJenis"></p>
+    <label>File</label><input type="file" id="file" accept=".csv,.xlsx,.xls" onchange="bacaFile()">
+    <div id="upMsg" class="msg hide"></div>
+    <div id="prev" class="hide">
+      <h2 style="margin-top:16px">Pratinjau</h2>
+      <div id="prevInfo"></div>
+      <div class="wrap"><table id="prevTbl"></table></div>
+      <button class="btn" id="btnSimpan" onclick="simpan()">Simpan ke database</button>
+    </div>
+  </div>
+</section>
+
+<section id="p_tahunan" class="hide">
+  <div class="card">
+    <h2>Data tahunan dari luar</h2>
+    <div class="row"><div><label>Tahun</label><input type="number" id="thn" value="2026" onchange="muatInput()"></div></div>
+    <div class="row">
+      <div><label>Penduduk usia 16–18 (jiwa)</label><input type="number" id="in_penduduk|ALL"></div>
+      <div><label>Lulusan SMP tahun lalu (jiwa)</label><input type="number" id="in_lulusanSMP|ALL"></div>
+    </div>
+    <div class="row">
+      <div><label>Peserta ujian SMA</label><input type="number" id="in_peserta|SMA"></div>
+      <div><label>Peserta ujian SMK</label><input type="number" id="in_peserta|SMK"></div>
+      <div><label>Lulusan SMA masuk PT</label><input type="number" id="in_pt|SMA"></div>
+      <div><label>Lulusan SMK masuk PT</label><input type="number" id="in_pt|SMK"></div>
+    </div>
+    <div class="row">
+      <div><label>Lulusan SMA bekerja sesuai keahlian</label><input type="number" id="in_kerja|SMA"></div>
+      <div><label>Lulusan SMK bekerja sesuai keahlian</label><input type="number" id="in_kerja|SMK"></div>
+      <div><label>Siswa miskin SMA</label><input type="number" id="in_miskin|SMA"></div>
+      <div><label>Siswa miskin SMK</label><input type="number" id="in_miskin|SMK"></div>
+    </div>
+    <p class="small">Kosongkan bila datanya belum ada. Indikator terkait akan menampilkan "Menunggu data".</p>
+    <button class="btn" onclick="simpanInput()">Simpan</button>
+    <div id="inMsg" class="msg hide"></div>
+  </div>
+</section>
+
+<section id="p_hasil" class="hide">
+  <div class="card">
+    <h2>Hasil indikator</h2>
+    <div class="row">
+      <div><label>Tahun</label><input type="number" id="hTahun" value="2026"></div>
+      <div><label>Triwulan</label><select id="hTw"><option value="1">TW1</option><option value="2">TW2</option><option value="3">TW3</option><option value="4" selected>TW4</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>Dasar penghitungan ATS</label><select id="oDasar"><option value="sekolah">Sekolah di Gunungkidul</option><option value="domisili">Domisili Gunungkidul</option></select></div>
+      <div><label>Batas usia ATS</label><select id="oUsia"><option value="semua">Semua usia</option><option value="1618">Usia 16–18</option></select></div>
+      <div><label>Kecualikan pindah sekolah / data ganda</label><select id="oKecuali"><option value="ya">Ya</option><option value="tidak">Tidak</option></select></div>
+      <div><label>Penyebut APS</label><select id="oPenyebut"><option value="siswa">Jumlah siswa</option><option value="penduduk">Penduduk 16–18</option></select></div>
+    </div>
+    <button class="btn" onclick="tampil()">Tampilkan</button>
+    <button class="btn sec" id="btnCsv" onclick="unduhCsv()" disabled>Unduh CSV</button>
+    <div id="hMsg" class="msg hide"></div>
+  </div>
+  <div id="hasilBox" class="hide">
+    <div class="card"><div class="chips" id="chips"></div></div>
+    <div class="card wrap"><table id="tblHasil"></table></div>
+    <div class="card wrap"><h2>Rekap ATS</h2><table id="tblATS"></table>
+      <p class="small">Arti kode alasan dapat diubah di sheet KodeAlasan pada spreadsheet database.</p></div>
+  </div>
+</section>
+
+<section id="p_riwayat" class="hide">
+  <div class="card wrap"><h2>Riwayat upload</h2><table id="tblRiwayat"></table></div>
+</section>
+
+</main>
+</div>
+
+<footer>Credit by Tri Yuliant</footer>
+
+<script>
+/* Penghubung GitHub Pages -> Google Apps Script.
+   Di Google Apps Script, google.script.run sudah ada dan blok ini tidak melakukan apa-apa.
+   Di GitHub Pages, google.script.run ditiru: setiap pemanggilan dikirim ke web app Apps Script (doPost).
+   Jika alamat deployment berubah, ganti nilai DOPADU_API_URL di bawah. */
+(function () {
+  var DOPADU_API_URL = 'https://script.google.com/a/macros/jogjabelajar.org/s/AKfycbx0DTUV6BmDmHABYZgiGFpav0ZnCZuyzgCuyJjRuIARzBK1xGYO8LVhyAEJJfSc2pTK/exec';
+  if (window.google && google.script && google.script.run) return;   // sedang berjalan di Apps Script
+
+  function panggil(nama, args, ok, gagal) {
+    function galat(pesan) { if (gagal) gagal({ message: pesan }); else console.error(pesan); }
+    fetch(DOPADU_API_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // text/plain: tanpa preflight CORS
+      body: JSON.stringify({ fn: nama, args: args })
+    })
+      .then(function (r) { return r.text(); })
+      .then(function (teks) {
+        var d;
+        try { d = JSON.parse(teks); }
+        catch (x) { throw new Error('Respons server tidak valid. Periksa deployment Apps Script (akses: Siapa saja, versi terbaru).'); }
+        if (d && d.ok) { if (ok) ok(d.data); }
+        else galat((d && d.error) || 'Terjadi kesalahan di server.');
+      })
+      .catch(function (x) {
+        var m = String((x && x.message) || x);
+        galat(/failed to fetch|networkerror|load failed/i.test(m)
+          ? 'Tidak dapat terhubung ke server. Periksa koneksi internet dan pengaturan deployment Apps Script.' : m);
+      });
+  }
+
+  function runner(ok, gagal) {
+    return new Proxy({}, {
+      get: function (_, nama) {
+        if (typeof nama !== 'string' || nama === 'then') return undefined;
+        if (nama === 'withSuccessHandler') return function (f) { return runner(f, gagal); };
+        if (nama === 'withFailureHandler') return function (f) { return runner(ok, f); };
+        if (nama === 'withUserObject') return function () { return runner(ok, gagal); };
+        return function () { panggil(nama, Array.prototype.slice.call(arguments), ok, gagal); };
+      }
+    });
+  }
+
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+  window.google.script.run = runner();
+})();
+</script>
+
+<script>
+/*PURE-START*/
+var JENJANG = ['SMA', 'SMK'];
+function norm(s) { return String(s == null ? '' : s).replace(/^\uFEFF/, '').trim().toLowerCase(); }
+function num(v) { if (typeof v === 'number') return v; var n = Number(String(v == null ? '' : v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? 0 : n; }
+function isGK(s) { return norm(s).replace(/\s/g, '').indexOf('gunung') >= 0; }
+
+function parseCSV(text) {
+  text = text.replace(/^\uFEFF/, '');
+  var first = text.split(/\r?\n/)[0] || '';
+  var cnt = function (c) { return first.split(c).length - 1; };
+  var d = ','; if (cnt(';') > cnt(d)) d = ';'; if (cnt('\t') > cnt(d)) d = '\t';
+  var rows = [], row = [], cur = '', q = false;
+  for (var i = 0; i < text.length; i++) {
+    var c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === d) { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else if (c !== '\r') cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(function (r) { return r.some(function (x) { return String(x).trim() !== ''; }); });
+}
+function colMap(header, wajib) {
+  var h = header.map(norm), m = {}, hilang = [];
+  wajib.forEach(function (n) { var i = h.indexOf(n); if (i < 0) hilang.push(n); m[n] = i; });
+  if (hilang.length) throw new Error('Kolom tidak ditemukan: ' + hilang.join(', '));
+  return m;
+}
+function transformPokok(t) {
+  var w = ['kabupaten/kota', 'bentuk pendidikan', 'npsn', 'nama satuan pendidikan', 't10 l', 't10 p', 't11 l', 't11 p', 't12 l', 't12 p',
+    'peserta didik baru', 'peserta didik putus', 'peserta didik mengulang', 'jumlah ruang kelas', 'guru', 'u16 l', 'u16 p', 'u17 l', 'u17 p', 'u18 l', 'u18 p'];
+  var m = colMap(t[0], w), h = t[0].map(norm);
+  var ix = function (n) { return h.indexOf(n); };
+  var u = function (r, a) { var s = 0; a.forEach(function (x) { ['l', 'p'].forEach(function (g) { var i = ix('u' + x + ' ' + g); if (i >= 0) s += num(r[i]); }); }); return s; };
+  var rows = [], warn = [], putus = 0, kosongRuang = [];
+  for (var i = 1; i < t.length; i++) {
+    var r = t[i], bentuk = String(r[m['bentuk pendidikan']]).trim().toUpperCase();
+    if (!isGK(r[m['kabupaten/kota']]) || JENJANG.indexOf(bentuk) < 0) continue;
+    var ruang = String(r[m['jumlah ruang kelas']]).trim() === '' ? '' : num(r[m['jumlah ruang kelas']]);
+    putus += num(r[m['peserta didik putus']]);
+    if (ruang === '') kosongRuang.push(r[m['nama satuan pendidikan']]);
+    var rng = []; for (var a = 0; a <= 15; a++) rng.push(a);
+    rows.push([String(r[m['npsn']]).trim(), String(r[m['nama satuan pendidikan']]).trim(), bentuk,
+      num(r[m['t10 l']]), num(r[m['t10 p']]), num(r[m['t11 l']]), num(r[m['t11 p']]), num(r[m['t12 l']]), num(r[m['t12 p']]),
+      num(r[m['peserta didik baru']]), num(r[m['peserta didik putus']]), num(r[m['peserta didik mengulang']]),
+      u(r, rng), u(r, [16]), u(r, [17]), u(r, [18]), u(r, [19, 20, '21+']),
+      ruang, num(r[m['guru']])]);
+  }
+  if (!rows.length) throw new Error('Tidak ada baris SMA/SMK Kab. Gunungkidul di file ini.');
+  if (putus === 0) warn.push("Kolom 'Peserta Didik Putus' kosong semua. APS dihitung dari data ATS.");
+  if (kosongRuang.length) warn.push('Jumlah ruang kelas kosong: ' + kosongRuang.join(', '));
+  return { rows: rows, warn: warn, cols: ['NPSN', 'Nama', 'Jenjang', 'Siswa baru', 'Ruang', 'Guru'], pick: [0, 1, 2, 9, 17, 18] };
+}
+function transformSekolah(t) {
+  var hi = -1;
+  for (var i = 0; i < t.length; i++) if (t[i].some(function (c) { return norm(c) === 'npsn'; })) { hi = i; break; }
+  if (hi < 0) throw new Error('Baris judul (NPSN) tidak ditemukan.');
+  var h = t[hi].map(norm), nama = h.indexOf('nama satuan pendidikan') >= 0 ? 'nama satuan pendidikan' : 'nama sekolah';
+  var m = colMap(t[hi], [nama, 'npsn', 'jenjang', 'status', 'akreditasi', 'kapanewon']);
+  var rows = [], warn = [], kosong = 0;
+  for (var j = hi + 1; j < t.length; j++) {
+    var r = t[j], jj = String(r[m['jenjang']]).trim().toUpperCase();
+    if (JENJANG.indexOf(jj) < 0) continue;
+    var ak = String(r[m['akreditasi']]).trim();
+    if (!ak) kosong++;
+    rows.push([String(r[m['npsn']]).trim(), String(r[m[nama]]).trim(), jj, String(r[m['status']]).trim(), ak, String(r[m['kapanewon']]).trim()]);
+  }
+  if (!rows.length) throw new Error('Tidak ada baris SMA/SMK di file ini.');
+  if (kosong) warn.push(kosong + ' sekolah tanpa akreditasi.');
+  return { rows: rows, warn: warn, cols: ['NPSN', 'Nama', 'Jenjang', 'Status', 'Akreditasi', 'Kapanewon'], pick: [0, 1, 2, 3, 4, 5] };
+}
+function transformATS(t, tahun) {
+  var m = colMap(t[0], ['kabupaten', 'sekolah_kabupaten', 'npsn', 'nama_sekolah', 'bentuk_pendidikan', 'tahun', 'tingkat_pendidikan', 'status', 'jenis_kelamin',
+    'tanggal_lahir', 'alasan_approval_id', 'keterangan_approval', 'alasan_lainnya']);
+  var rows = [], warn = [], tanpaLahir = 0;
+  for (var i = 1; i < t.length; i++) {
+    var r = t[i], jj = String(r[m['bentuk_pendidikan']]).trim().toUpperCase();
+    var dom = isGK(r[m['kabupaten']]), skl = isGK(r[m['sekolah_kabupaten']]);
+    if ((!dom && !skl) || JENJANG.indexOf(jj) < 0) continue;
+    var by = String(r[m['tanggal_lahir']]).match(/(\d{4})\s*$/), usia = by ? tahun - Number(by[1]) : '';
+    if (usia === '') tanpaLahir++;
+    var tx = (String(r[m['keterangan_approval']]) + ' ' + String(r[m['alasan_lainnya']])).toLowerCase();
+    var bukan = /pindah sekolah|mutasi|siswa ganda|sudah lulus/.test(tx) ? 'Ya' : 'Tidak';
+    rows.push([String(r[m['npsn']]).trim(), String(r[m['nama_sekolah']]).trim(), jj, skl ? 'Kab. Gunungkidul' : String(r[m['sekolah_kabupaten']]).trim(),
+      num(r[m['tahun']]), num(r[m['tingkat_pendidikan']]), String(r[m['status']]).trim(), String(r[m['jenis_kelamin']]).trim(), usia,
+      parseInt(r[m['alasan_approval_id']], 10) || 0, bukan, dom ? 'Ya' : 'Tidak']);
+  }
+  if (!rows.length) throw new Error('Tidak ada baris ATS SMA/SMK untuk Gunungkidul.');
+  if (tanpaLahir) warn.push(tanpaLahir + ' baris tanpa tahun lahir.');
+  warn.push('Data pribadi (nama siswa, NISN, NIK, KK, nama ibu, alamat) tidak dibaca dan tidak dikirim.');
+  return { rows: rows, warn: warn, cols: ['NPSN', 'Sekolah', 'Jenjang', 'Kab. sekolah', 'Tahun ATS', 'Usia', 'Kode alasan'], pick: [0, 1, 2, 3, 4, 8, 9] };
+}
+function transformLulusan(t, tahun) {
+  var hi = -1;
+  for (var i = 0; i < t.length; i++) if (t[i].some(function (c) { return norm(c) === 'jurusan'; })) { hi = i; break; }
+  if (hi < 0) throw new Error('Baris judul (Jurusan) tidak ditemukan.');
+  var h = t[hi].map(norm), nc = h.indexOf('nama sekolah'), jc = h.indexOf('jurusan'), jv = h.indexOf('jenjang');
+  if (nc < 0 || jv < 0) throw new Error('Kolom Nama sekolah / Jenjang tidak ditemukan.');
+  var yc = -1, tahunAda = [];
+  t[hi].forEach(function (c, k) { var s = String(c).trim(); if (/^\d{4}$/.test(s)) tahunAda.push(s); if (s === String(tahun)) yc = k; });
+  if (yc < 0) throw new Error('Tahun ' + tahun + ' tidak ada di file. Tahun tersedia: ' + tahunAda.join(', '));
+  var rows = [], warn = [], cur = null, tl = 0, tp = 0, totL = null, totP = null;
+  for (var j = hi + 1; j < t.length; j++) {
+    var r = t[j];
+    if (String(r[0]).toLowerCase().indexOf('jumlah total') === 0) { totL = num(r[yc]); totP = num(r[yc + 1]); continue; }
+    if (String(r[nc]).trim() !== '') cur = { nama: String(r[nc]).trim(), jenjang: String(r[jv]).trim().toUpperCase() };
+    if (String(r[jc]).trim() === 'Jumlah' && cur) {
+      if (JENJANG.indexOf(cur.jenjang) >= 0) { rows.push([cur.nama, cur.jenjang, num(r[yc]), num(r[yc + 1])]); tl += num(r[yc]); tp += num(r[yc + 1]); }
+      cur = null;
+    }
+  }
+  if (!rows.length) throw new Error('Tidak ada data lulusan SMA/SMK.');
+  if (totL !== null && (totL !== tl || totP !== tp)) warn.push('Jumlah per sekolah (' + (tl + tp) + ') berbeda dari baris Jumlah total di file (' + (totL + totP) + '). Yang disimpan: jumlah per sekolah.');
+  return { rows: rows, warn: warn, cols: ['Sekolah', 'Jenjang', 'Laki-laki', 'Perempuan'], pick: [0, 1, 2, 3] };
+}
+/*PURE-END*/
+
+var HASIL = null, PARSED = null;
+function $(id) { return document.getElementById(id); }
+function rpc(fn) {
+  var a = Array.prototype.slice.call(arguments, 1);
+  return new Promise(function (ok, no) {
+    google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { no(new Error(e && e.message ? e.message : e)); })[fn].apply(google.script.run, a);
+  });
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function show(id, cls, text) { var e = $(id); e.className = 'msg ' + cls; e.innerHTML = text; }
+
+gantiJenis();
+function tab(n) {
+  ['upload', 'tahunan', 'hasil', 'riwayat'].forEach(function (x) { $('p_' + x).classList.toggle('hide', x !== n); $('t_' + x).classList.toggle('on', x === n); });
+  if (n === 'tahunan') muatInput();
+  if (n === 'riwayat') muatRiwayat();
+}
+
+/* ---- upload ---- */
+var PETUNJUK = {
+  pokok: 'Unduh dari Data Pokok Pendidikan. File se-DIY boleh langsung diupload; hanya Gunungkidul SMA/SMK yang disimpan.',
+  sekolah: 'File daftar sekolah dari SIMAK (memuat NPSN, jenjang, akreditasi).',
+  ats: 'Rekap ATS dari Dapodik. Kolom data pribadi tidak dibaca. Usia dihitung dari tahun yang diisi di atas dikurangi tahun lahir.',
+  lulusan: 'File Jumlah Lulusan per Sekolah dari SIMAK. Isi Tahun dengan tahun kelulusan yang mau diambil (misalnya 2026).'
+};
+function gantiJenis() {
+  var j = $('jenis').value;
+  $('boxTw').classList.toggle('hide', j === 'lulusan');
+  $('lbTahun').textContent = j === 'lulusan' ? 'Tahun kelulusan' : 'Tahun';
+  $('petunjukJenis').textContent = PETUNJUK[j];
+  $('file').value = ''; $('prev').classList.add('hide'); $('upMsg').className = 'msg hide'; PARSED = null;
+}
+function bacaTabel(file) {
+  return new Promise(function (ok, no) {
+    var fr = new FileReader();
+    if (/\.csv$/i.test(file.name)) {
+      fr.onload = function () { try { ok(parseCSV(fr.result)); } catch (e) { no(e); } };
+      fr.readAsText(file, 'utf-8');
+    } else {
+      fr.onload = function () {
+        try { var wb = XLSX.read(fr.result, { type: 'array' }); ok(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: true })); } catch (e) { no(e); }
+      };
+      fr.readAsArrayBuffer(file);
+    }
+    fr.onerror = function () { no(new Error('File tidak bisa dibaca.')); };
+  });
+}
+function bacaFile() {
+  var f = $('file').files[0]; if (!f) return;
+  var j = $('jenis').value, thn = Number($('tahun').value);
+  $('upMsg').className = 'msg hide'; $('prev').classList.add('hide');
+  bacaTabel(f).then(function (t) {
+    var r = j === 'pokok' ? transformPokok(t) : j === 'sekolah' ? transformSekolah(t) : j === 'ats' ? transformATS(t, thn) : transformLulusan(t, thn);
+    PARSED = r;
+    var per = {}; r.rows.forEach(function (x) { var k = j === 'lulusan' ? x[1] : j === 'ats' ? x[2] : x[j === 'pokok' ? 2 : 2]; per[k] = (per[k] || 0) + 1; });
+    var info = '<b>' + r.rows.length + ' baris</b> akan disimpan (' + Object.keys(per).map(function (k) { return k + ': ' + per[k]; }).join(', ') + ').';
+    r.warn.forEach(function (w) { info += '<div class="msg warn">' + esc(w) + '</div>'; });
+    $('prevInfo').innerHTML = info;
+    var th = '<tr>' + r.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>';
+    $('prevTbl').innerHTML = th + r.rows.slice(0, 5).map(function (x) { return '<tr>' + r.pick.map(function (i) { return '<td>' + esc(x[i]) + '</td>'; }).join('') + '</tr>'; }).join('');
+    $('prev').classList.remove('hide');
+  }).catch(function (e) { PARSED = null; show('upMsg', 'err', esc(e.message)); });
+}
+function simpan() {
+  if (!PARSED) return;
+  var j = $('jenis').value, thn = Number($('tahun').value), tw = Number($('tw').value);
+  var label = j === 'lulusan' ? 'tahun ' + thn : 'TW' + tw + ' ' + thn;
+  if (!confirm('Simpan data ' + j + ' untuk ' + label + '? Data periode yang sama akan diganti.')) return;
+  $('btnSimpan').disabled = true;
+  rpc('saveUpload', j, thn, tw, PARSED.rows, $('file').files[0].name).then(function (r) {
+    show('upMsg', 'ok', r.n + ' baris tersimpan untuk ' + label + '.'); $('prev').classList.add('hide'); $('file').value = ''; PARSED = null;
+  }).catch(function (e) { show('upMsg', 'err', esc(e.message)); }).then(function () { $('btnSimpan').disabled = false; });
+}
+
+/* ---- data tahunan ---- */
+function inputIds() { return Array.prototype.slice.call(document.querySelectorAll('[id^="in_"]')); }
+function muatInput() {
+  rpc('getInput', Number($('thn').value)).then(function (o) {
+    inputIds().forEach(function (e) { var v = o[e.id.slice(3)]; e.value = v === undefined ? '' : v; });
+  }).catch(function (e) { show('inMsg', 'err', esc(e.message)); });
+}
+function simpanInput() {
+  var v = {}; inputIds().forEach(function (e) { v[e.id.slice(3)] = e.value; });
+  rpc('saveInput', Number($('thn').value), v).then(function (r) { show('inMsg', 'ok', r.n + ' isian tersimpan untuk tahun ' + $('thn').value + '.'); })
+    .catch(function (e) { show('inMsg', 'err', esc(e.message)); });
+}
+
+/* ---- hasil ---- */
+function fmt(v, f) {
+  if (v === null || v === undefined) return '<td class="n w">Menunggu data</td>';
+  if (f === 'pct') return '<td class="n">' + (v * 100).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%</td>';
+  if (f === 'dec') return '<td class="n">' + v.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '</td>';
+  return '<td class="n">' + Math.round(v).toLocaleString('id-ID') + '</td>';
+}
+function tampil() {
+  var opt = { dasar: $('oDasar').value, usia: $('oUsia').value, kecuali: $('oKecuali').value === 'ya', penyebut: $('oPenyebut').value };
+  rpc('getHasil', Number($('hTahun').value), Number($('hTw').value), opt).then(function (h) {
+    HASIL = h;
+    var nm = { pokok: 'Data Pokok', sekolah: 'Daftar sekolah', ats: 'ATS', lulusan: 'Lulusan' };
+    $('chips').innerHTML = Object.keys(nm).map(function (k) { return '<span class="' + (h.ada[k] ? 'y' : 't') + '">' + (h.ada[k] ? '✓ ' : '○ ') + nm[k] + '</span>'; }).join('') +
+      '<span class="' + (h.adaInput ? 'y' : 't') + '">' + (h.adaInput ? '✓ ' : '○ ') + 'Data tahunan</span>';
+    var t = '<tr><th>No</th><th>Indikator</th><th>SMA</th><th>SMK</th><th>SMA + SMK</th><th>Catatan</th></tr>';
+    t += '<tr class="sec"><td colspan="6">Data dasar</td></tr>';
+    h.dasar.forEach(function (d) { t += '<tr><td></td><td>' + esc(d.nama) + '</td>' + d.v.map(function (x) { return fmt(x, 'num'); }).join('') + '<td></td></tr>'; });
+    t += '<tr class="sec"><td colspan="6">Indikator laporan</td></tr>';
+    h.indikator.forEach(function (i) { t += '<tr><td>' + i.no + '</td><td><b>' + esc(i.nama) + '</b></td>' + i.v.map(function (x) { return fmt(x, i.fmt); }).join('') + '<td class="small">' + esc(i.cat) + '</td></tr>'; });
+    $('tblHasil').innerHTML = t;
+    var r = h.rekapATS, a = '<tr><th>Kelompok</th><th>SMA</th><th>SMK</th><th>Total</th></tr>';
+    var blok = function (jd, arr) { a += '<tr class="sec"><td colspan="4">' + jd + '</td></tr>'; arr.forEach(function (x) { a += '<tr><td>' + esc(x.label) + '</td><td class="n">' + x.v[0] + '</td><td class="n">' + x.v[1] + '</td><td class="n">' + (x.v[0] + x.v[1]) + '</td></tr>'; }); };
+    if (!h.ada.ats) a += '<tr><td colspan="4" class="w">Data ATS belum diupload untuk periode ini.</td></tr>';
+    else {
+      blok('Berdasarkan alasan', r.kode); blok('Berdasarkan tahun', r.tahun); blok('Berdasarkan usia', r.usia);
+      blok('Indikasi bukan putus sekolah', [{ label: 'Pindah sekolah, mutasi, data ganda, sudah lulus', v: r.bukan }]);
+    }
+    $('tblATS').innerHTML = a;
+    $('hasilBox').classList.remove('hide'); $('hMsg').className = 'msg hide'; $('btnCsv').disabled = false;
+  }).catch(function (e) { show('hMsg', 'err', esc(e.message)); });
+}
+function unduhCsv() {
+  if (!HASIL) return;
+  var q = function (s) { return '"' + String(s).replace(/"/g, '""') + '"'; };
+  var f = function (v, t) { if (v === null) return 'Menunggu data'; return t === 'pct' ? (v * 100).toFixed(2) + '%' : t === 'dec' ? v.toFixed(1) : Math.round(v); };
+  var lines = [['No', 'Indikator', 'SMA', 'SMK', 'SMA + SMK'].map(q).join(',')];
+  HASIL.indikator.forEach(function (i) { lines.push([i.no, i.nama].map(q).concat(i.v.map(function (x) { return q(f(x, i.fmt)); })).join(',')); });
+  var b = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = 'indikator_TW' + $('hTw').value + '_' + $('hTahun').value + '.csv'; a.click();
+}
+
+/* ---- riwayat ---- */
+function muatRiwayat() {
+  rpc('getRiwayat').then(function (rows) {
+    $('tblRiwayat').innerHTML = '<tr><th>Waktu</th><th>Jenis</th><th>Tahun</th><th>TW</th><th>Baris</th><th>File / catatan</th></tr>' +
+      (rows.length ? rows.map(function (r) { return '<tr>' + r.map(function (x) { return '<td>' + esc(x) + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="6" class="w">Belum ada upload.</td></tr>');
+  }).catch(function (e) { $('tblRiwayat').innerHTML = '<tr><td>' + esc(e.message) + '</td></tr>'; });
+}
+</script>
+</body>
+</html>
